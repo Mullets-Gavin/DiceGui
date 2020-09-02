@@ -10,6 +10,8 @@
 
 local player = game:GetService("Players").LocalPlayer
 local new_char_functions, died_char_functions, events, alive = {}, {}, {}, false
+local next_death_functions = {}
+local next_added_functions = {}
 local Module = {}
 local listening = false
 
@@ -27,6 +29,14 @@ Module.bind_to_character_death = function(closure)
 	table.insert(died_char_functions, closure)
 end
 
+Module.bind_to_next_character_add = function(closure)
+	table.insert(next_added_functions, closure)
+end
+
+Module.bind_to_next_character_death = function(closure)
+	table.insert(next_death_functions, closure)
+end
+
 Module.disconnect_connections = function()
 	for _, event in ipairs(events) do
 		if event.Connected then
@@ -39,6 +49,10 @@ Module.disconnect_connections = function()
 		for _, c in ipairs(died_char_functions) do
 			c()
 		end
+		for _, c in ipairs(next_death_functions) do
+			c()
+		end
+		next_death_functions = {}
 		alive = false
 	end
 end
@@ -56,11 +70,14 @@ Module._add_character = function(character)
 	end
 	
 	alive = true
-	humanoid.Died:Connect(Module.disconnect_connections)
-	
 	for _, f in ipairs(new_char_functions) do
 		f(character)
 	end
+	for _, f in ipairs(next_added_functions) do
+		f(character)
+	end
+	next_added_functions = {}
+	humanoid.Died:Connect(Module.disconnect_connections)
 end
 
 Module.hook = function()
