@@ -21,77 +21,77 @@ local DeathEvents = require(script:WaitForChild('DeathEvents'))
 
 --// functions
 local function WaitForPath(interface)
-for index,element in pairs(interface:GetChildren()) do
-	local ui = interface:WaitForChild(element.Name)
-	local findChildren = ui:GetChildren()
-	if #findChildren > 0 then
-		for each,child in pairs(findChildren) do
-			WaitForPath(child)
+	for index,element in pairs(interface:GetChildren()) do
+		local ui = interface:WaitForChild(element.Name)
+		local findChildren = ui:GetChildren()
+		if #findChildren > 0 then
+			for each,child in pairs(findChildren) do
+				WaitForPath(child)
+			end
 		end
 	end
-end
-return interface
+	return interface
 end
 
 local function Replicate()
-local player = Services['Players'].LocalPlayer
-local playerGui = player:WaitForChild('PlayerGui')
-local folder = DiceGui.Path:WaitForChild(DiceGui.Folder)
-for index,ui in pairs(folder:GetChildren()) do
-	local interface = WaitForPath(ui)
-	if not DiceGui.Container[interface.Name] then
-		DiceGui.Container[interface.Name] = {
-			['ResetOnSpawn'] = interface.ResetOnSpawn;
-			['Enabled'] = nil;
-			['IgnoreGuiInset'] = nil;
-		}
-		pcall(function()
-			if interface.Enabled then
-				DiceGui.Container[interface.Name]['Enabled'] = interface.Enabled
+	local player = Services['Players'].LocalPlayer
+	local playerGui = player:WaitForChild('PlayerGui')
+	local folder = DiceGui.Path:WaitForChild(DiceGui.Folder)
+	for index,ui in pairs(folder:GetChildren()) do
+		local interface = WaitForPath(ui)
+		if not DiceGui.Container[interface.Name] then
+			DiceGui.Container[interface.Name] = {
+				['ResetOnSpawn'] = interface.ResetOnSpawn;
+				['Enabled'] = nil;
+				['IgnoreGuiInset'] = nil;
+			}
+			pcall(function()
+				if interface.Enabled then
+					DiceGui.Container[interface.Name]['Enabled'] = interface.Enabled
+				end
+			end)
+			pcall(function()
+				if interface.IgnoreGuiInset then
+					DiceGui.Container[interface.Name]['IgnoreGuiInset'] = interface.IgnoreGuiInset
+				end
+			end)
+			local findUI = playerGui:FindFirstChild(interface.Name)
+			if not findUI then
+				local cloneUI = interface:Clone()
+				cloneUI.Parent = playerGui
 			end
-		end)
-		pcall(function()
-			if interface.IgnoreGuiInset then
-				DiceGui.Container[interface.Name]['IgnoreGuiInset'] = interface.IgnoreGuiInset
-			end
-		end)
-		local findUI = playerGui:FindFirstChild(interface.Name)
-		if not findUI then
+		elseif DiceGui.Container[interface.Name]['ResetOnSpawn'] then
+			local findOld = playerGui:FindFirstChild(interface.Name)
+			if findOld then findOld:Destroy() end
 			local cloneUI = interface:Clone()
 			cloneUI.Parent = playerGui
 		end
-	elseif DiceGui.Container[interface.Name]['ResetOnSpawn'] then
-		local findOld = playerGui:FindFirstChild(interface.Name)
-		if findOld then findOld:Destroy() end
-		local cloneUI = interface:Clone()
-		cloneUI.Parent = playerGui
 	end
-end
-if not DiceGui.Initialized then
-	DiceGui.Initialized = true
-	print('[DICE GUI]: Successfully loaded PlayerGui with contents from',DiceGui.Folder..', located in',DiceGui.Path)
-end
+	if not DiceGui.Initialized then
+		DiceGui.Initialized = true
+		print('[DICE GUI]: Successfully loaded PlayerGui with contents from',DiceGui.Folder..', located in',DiceGui.Path)
+	end
 end
 
 local function Initialize()
-local folder = Instance.new('Folder')
-folder.Name = DiceGui.Folder
-folder.Parent = DiceGui.Path
-for index,interface in pairs(Services['StarterGui']:GetChildren()) do
-	interface.Parent = folder
-end
-DiceGui.Initialized = true
-print('[DICE GUI]: Successfully initialized StarterGui for automatic PlayerGui replication')
+	local folder = Instance.new('Folder')
+	folder.Name = DiceGui.Folder
+	folder.Parent = DiceGui.Path
+	for index,interface in pairs(Services['StarterGui']:GetChildren()) do
+		interface.Parent = folder
+	end
+	DiceGui.Initialized = true
+	print('[DICE GUI]: Successfully initialized StarterGui for automatic PlayerGui replication')
 end
 
 return function()
-if Services['RunService']:IsServer() then
-	Initialize()
-elseif Services['RunService']:IsClient() then
-	Replicate()
-	DeathEvents.bind_to_character_add(function(Character)
+	if Services['RunService']:IsServer() then
+		Initialize()
+	elseif Services['RunService']:IsClient() then
 		Replicate()
-	end)
-	DeathEvents.hook()
-end
+		DeathEvents.bind_to_character_add(function(Character)
+			Replicate()
+		end)
+		DeathEvents.hook()
+	end
 end
