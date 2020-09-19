@@ -1,6 +1,6 @@
 --[[
 	@Author: Gavin "Mullets" Rosenthal
-	@Desc: Custom UI replication. works great for no dependency on the character. require on both server & client and run DiceGui()
+	@Desc: Custom UI replication. works great for no dependency on the character. require on both server & client and run DiceGui:Initialize()
 --]]
 
 --// services
@@ -84,7 +84,7 @@ local function Initialize()
 	print('[DICE GUI]: Successfully initialized StarterGui for automatic PlayerGui replication')
 end
 
-return function()
+function DiceGui:Initialize()
 	if Services['RunService']:IsServer() then
 		Initialize()
 	elseif Services['RunService']:IsClient() then
@@ -95,3 +95,5 @@ return function()
 		DeathEvents.hook()
 	end
 end
+
+return DiceGui
